@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, Query
+import sys
+
+code = '''from fastapi import APIRouter, Depends, Query
 import asyncpg
 from typing import List, Dict, Any, Optional
 from app.api.dependencies import get_db_pool
@@ -10,23 +12,24 @@ def build_where_clause(region, zone, woreda, kebele, farmingType):
     values = []
     idx = 1
     if region and region != 'all':
-        conditions.append(f"geo_1_id = 'region-' || ${idx}")
+        # Assuming geo_1 is region_code
+        conditions.append(f"geo_1 = ")
         values.append(region)
         idx += 1
     if zone and zone != 'all':
-        conditions.append(f"geo_2_id = 'zone-' || ${idx}")
+        conditions.append(f"geo_2 = ")
         values.append(zone)
         idx += 1
     if woreda and woreda != 'all':
-        conditions.append(f"geo_3_id = 'woreda-' || ${idx}")
+        conditions.append(f"geo_3 = ")
         values.append(woreda)
         idx += 1
     if kebele and kebele != 'all':
-        conditions.append(f"geo_4_id = 'kebele-' || ${idx}")
+        conditions.append(f"geo_4 = ")
         values.append(kebele)
         idx += 1
     if farmingType and farmingType != 'all':
-        conditions.append(f"LOWER(main_farming_type) = LOWER(${idx})")
+        conditions.append(f"main_farming_type = ")
         values.append(farmingType)
         idx += 1
     
@@ -48,7 +51,7 @@ async def get_farmers_by_region(
     query = f"""
         SELECT
             COALESCE(geo_1, 'Unknown') as region,
-            COALESCE(REPLACE(geo_1_id, 'region-', ''), 'Unknown') as region_code,
+            COALESCE(geo_1, 'Unknown') as region_code,
             COUNT(DISTINCT farmer_id) as farmers
         FROM fr_rpt_farmer
         {where}
@@ -104,3 +107,6 @@ async def get_farmers_by_type(
     async with pool.acquire() as conn:
         records = await conn.fetch(query, *values)
     return [dict(r) for r in records]
+'''
+with open('app/api/routes/charts.py', 'w') as f:
+    f.write(code)
