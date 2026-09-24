@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, Query
+const fs = require('fs');
+
+const code = \rom fastapi import APIRouter, Depends, Query
 import asyncpg
 from typing import List, Dict, Any, Optional
 from app.api.dependencies import get_db_pool
@@ -10,27 +12,27 @@ def build_where_clause(region, zone, woreda, kebele, farmingType, recordState):
     values = []
     idx = 1
     if region and region != 'all':
-        conditions.append(f"geo_1_id = 'region-' || ${idx}")
+        conditions.append(f"geo_1_id = 'region-' || $\\{idx}")
         values.append(region)
         idx += 1
     if zone and zone != 'all':
-        conditions.append(f"geo_2_id = 'zone-' || ${idx}")
+        conditions.append(f"geo_2_id = 'zone-' || $\\{idx}")
         values.append(zone)
         idx += 1
     if woreda and woreda != 'all':
-        conditions.append(f"geo_3_id = 'woreda-' || ${idx}")
+        conditions.append(f"geo_3_id = 'woreda-' || $\\{idx}")
         values.append(woreda)
         idx += 1
     if kebele and kebele != 'all':
-        conditions.append(f"geo_4_id = 'kebele-' || ${idx}")
+        conditions.append(f"geo_4_id = 'kebele-' || $\\{idx}")
         values.append(kebele)
         idx += 1
     if farmingType and farmingType != 'all':
-        conditions.append(f"LOWER(main_farming_type) = LOWER(${idx})")
+        conditions.append(f"LOWER(main_farming_type) = LOWER($\\{idx})")
         values.append(farmingType)
         idx += 1
     if recordState and recordState != 'all':
-        conditions.append(f"LOWER(record_status) = LOWER(${idx})")
+        conditions.append(f"LOWER(record_status) = LOWER($\\{idx})")
         values.append(recordState)
         idx += 1
     
@@ -50,7 +52,7 @@ async def get_farmer_kpis(
     pool: asyncpg.Pool = Depends(get_db_pool)
 ):
     where, values = build_where_clause(region, zone, woreda, kebele, farmingType, recordState)
-    query = f"""
+    query = f'''
         SELECT
             COUNT(DISTINCT farmer_id) AS total_farmers,
             SUM(CASE WHEN LOWER(gender) = 'female' THEN 1 ELSE 0 END) AS female_farmers,
@@ -63,7 +65,7 @@ async def get_farmer_kpis(
             0 AS farmers_without_id
         FROM fr_rpt_farmer
         {where}
-    """
+    '''
     async with pool.acquire() as conn:
         records = await conn.fetch(query, *values)
     return [dict(r) for r in records]
@@ -79,7 +81,7 @@ async def get_farmers_by_region(
     pool: asyncpg.Pool = Depends(get_db_pool)
 ):
     where, values = build_where_clause(region, zone, woreda, kebele, farmingType, recordState)
-    query = f"""
+    query = f'''
         SELECT
             COALESCE(geo_1, 'Unknown') as region,
             COALESCE(REPLACE(geo_1_id, 'region-', ''), 'Unknown') as region_code,
@@ -88,7 +90,7 @@ async def get_farmers_by_region(
         {where}
         GROUP BY 1, 2
         ORDER BY farmers DESC
-    """
+    '''
     async with pool.acquire() as conn:
         records = await conn.fetch(query, *values)
     return [dict(r) for r in records]
@@ -104,7 +106,7 @@ async def get_farmers_by_gender(
     pool: asyncpg.Pool = Depends(get_db_pool)
 ):
     where, values = build_where_clause(region, zone, woreda, kebele, farmingType, recordState)
-    query = f"""
+    query = f'''
         SELECT
             COALESCE(gender, 'Unknown') as gender,
             COUNT(DISTINCT farmer_id) as farmers
@@ -112,7 +114,7 @@ async def get_farmers_by_gender(
         {where}
         GROUP BY 1
         ORDER BY farmers DESC
-    """
+    '''
     async with pool.acquire() as conn:
         records = await conn.fetch(query, *values)
     return [dict(r) for r in records]
@@ -128,7 +130,7 @@ async def get_farmers_by_type(
     pool: asyncpg.Pool = Depends(get_db_pool)
 ):
     where, values = build_where_clause(region, zone, woreda, kebele, farmingType, recordState)
-    query = f"""
+    query = f'''
         SELECT
             COALESCE(main_farming_type, 'Unknown') as farming_type,
             COUNT(DISTINCT farmer_id) as farmers
@@ -136,7 +138,7 @@ async def get_farmers_by_type(
         {where}
         GROUP BY 1
         ORDER BY farmers DESC
-    """
+    '''
     async with pool.acquire() as conn:
         records = await conn.fetch(query, *values)
     return [dict(r) for r in records]
@@ -152,7 +154,7 @@ async def get_farmers_by_age_and_gender(
     pool: asyncpg.Pool = Depends(get_db_pool)
 ):
     where, values = build_where_clause(region, zone, woreda, kebele, farmingType, recordState)
-    query = f"""
+    query = f'''
         SELECT
             COALESCE(age_band, 'Unknown') as age_group,
             COALESCE(gender, 'Unknown') as gender,
@@ -161,7 +163,7 @@ async def get_farmers_by_age_and_gender(
         {where}
         GROUP BY 1, 2
         ORDER BY age_group, gender
-    """
+    '''
     async with pool.acquire() as conn:
         records = await conn.fetch(query, *values)
     return [dict(r) for r in records]
@@ -177,7 +179,7 @@ async def get_farmers_by_education(
     pool: asyncpg.Pool = Depends(get_db_pool)
 ):
     where, values = build_where_clause(region, zone, woreda, kebele, farmingType, recordState)
-    query = f"""
+    query = f'''
         SELECT
             COALESCE(education_level, 'Unknown') as education,
             COUNT(DISTINCT farmer_id) as farmers
@@ -185,7 +187,7 @@ async def get_farmers_by_education(
         {where}
         GROUP BY 1
         ORDER BY farmers DESC
-    """
+    '''
     async with pool.acquire() as conn:
         records = await conn.fetch(query, *values)
     return [dict(r) for r in records]
@@ -201,7 +203,7 @@ async def get_land_tenure_split(
     pool: asyncpg.Pool = Depends(get_db_pool)
 ):
     where, values = build_where_clause(region, zone, woreda, kebele, farmingType, recordState)
-    query = f"""
+    query = f'''
         SELECT
             COALESCE(main_tenure, 'Unknown') as ownership_type,
             SUM(parcel_count) as parcels,
@@ -210,7 +212,7 @@ async def get_land_tenure_split(
         {where}
         GROUP BY 1
         ORDER BY parcels DESC
-    """
+    '''
     async with pool.acquire() as conn:
         records = await conn.fetch(query, *values)
     return [dict(r) for r in records]
@@ -226,7 +228,7 @@ async def get_registry_trend_by_month(
     pool: asyncpg.Pool = Depends(get_db_pool)
 ):
     where, values = build_where_clause(region, zone, woreda, kebele, farmingType, recordState)
-    query = f"""
+    query = f'''
         SELECT
             DATE_TRUNC('month', registration_date) as period,
             COUNT(DISTINCT farmer_id) as farmers,
@@ -236,7 +238,7 @@ async def get_registry_trend_by_month(
         {where} AND registration_date IS NOT NULL
         GROUP BY 1
         ORDER BY 1
-    """
+    '''
     async with pool.acquire() as conn:
         records = await conn.fetch(query, *values)
     return [dict(r) for r in records]
@@ -252,11 +254,11 @@ async def get_registry_coverage(
     pool: asyncpg.Pool = Depends(get_db_pool)
 ):
     where, values = build_where_clause(region, zone, woreda, kebele, farmingType, recordState)
-    query = f"""
+    query = f'''
         SELECT COUNT(DISTINCT geo_3_id) as covered_woredas
         FROM fr_rpt_farmer
         {where}
-    """
+    '''
     async with pool.acquire() as conn:
         records = await conn.fetch(query, *values)
         covered = records[0]['covered_woredas'] if records else 0
@@ -277,7 +279,7 @@ async def get_farmers_by_record_state(
     pool: asyncpg.Pool = Depends(get_db_pool)
 ):
     where, values = build_where_clause(region, zone, woreda, kebele, farmingType, recordState)
-    query = f"""
+    query = f'''
         SELECT
             COALESCE(record_status, 'Unknown') as record_state,
             COUNT(DISTINCT farmer_id) as farmers
@@ -285,7 +287,7 @@ async def get_farmers_by_record_state(
         {where}
         GROUP BY 1
         ORDER BY farmers DESC
-    """
+    '''
     async with pool.acquire() as conn:
         records = await conn.fetch(query, *values)
     return [dict(r) for r in records]
@@ -293,3 +295,5 @@ async def get_farmers_by_record_state(
 @router.get("/farmersByImportStatus", response_model=List[Dict[str, Any]])
 async def get_farmers_by_import_status():
     return []
+\;
+fs.writeFileSync('app/api/routes/charts.py', code);
