@@ -11,7 +11,7 @@ async def get_farmers_by_region(pool: asyncpg.Pool = Depends(get_db_pool)):
         SELECT
             COALESCE(geo_1, 'Unknown') as region,
             COALESCE(geo_1, 'Unknown') as region_code,
-            COUNT(DISTINCT internal_record_id) as farmers
+            COUNT(DISTINCT farmer_id) as farmers
         FROM fr_rpt_farmer
         GROUP BY 1, 2
         ORDER BY farmers DESC
@@ -25,7 +25,7 @@ async def get_farmers_by_gender(pool: asyncpg.Pool = Depends(get_db_pool)):
     query = """
         SELECT
             COALESCE(gender, 'Unknown') as gender,
-            COUNT(DISTINCT internal_record_id) as farmers
+            COUNT(DISTINCT farmer_id) as farmers
         FROM fr_rpt_farmer
         GROUP BY 1
         ORDER BY farmers DESC
@@ -39,7 +39,7 @@ async def get_farmers_by_type(pool: asyncpg.Pool = Depends(get_db_pool)):
     query = """
         SELECT
             COALESCE(main_farming_type, 'Unknown') as farming_type,
-            COUNT(DISTINCT internal_record_id) as farmers
+            COUNT(DISTINCT farmer_id) as farmers
         FROM fr_rpt_farmer
         GROUP BY 1
         ORDER BY farmers DESC
